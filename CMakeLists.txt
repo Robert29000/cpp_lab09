@@ -21,29 +21,48 @@ HunterGate(
 )
 
 # TODO: rename project and delete this comment
-project(template VERSION 0.1.0)
+project(pattern VERSION 0.1.0)
 string(APPEND CMAKE_CXX_FLAGS " -pedantic -Werror -Wall -Wextra")
 string(APPEND CMAKE_CXX_FLAGS " -Wno-unused-command-line-argument")
 string(APPEND CMAKE_CXX_FLAGS " -Wshadow -Wnon-virtual-dtor")
 
 hunter_add_package(GTest)
+hunter_add_package(Beast)
+hunter_add_package(OpenSSL)
+hunter_add_package(gumbo)
+hunter_add_package(Boost COMPONENTS program_options)
 find_package(GTest CONFIG REQUIRED)
+find_package(Beast CONFIG REQUIRED)
+find_package(gumbo CONFIG REQUIRED)
+find_package(Boost CONFIG REQUIRED program_options)
+
+
+
+add_library(thread_pool INTERFACE)
+target_sources(thread_pool INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include/ThreadPool.h)
 
 add_library(${PROJECT_NAME} STATIC
   # enum your files and delete this comment
-  ${CMAKE_CURRENT_SOURCE_DIR}/sources/source.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/sources/pattern.cpp
 )
 
 add_executable(demo
   ${CMAKE_CURRENT_SOURCE_DIR}/demo/main.cpp
 )
 
+
+target_include_directories(thread_pool INTERFACE
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
+        "$<INSTALL_INTERFACE:include>")
+
 target_include_directories(${PROJECT_NAME} PUBLIC
   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
   "$<INSTALL_INTERFACE:include>"
 )
 
-target_link_libraries(demo ${PROJECT_NAME})
+target_link_libraries(${PROJECT_NAME} Beast::Beast)
+
+target_link_libraries(demo ${PROJECT_NAME} Beast::Beast Boost::program_options gumbo::gumbo thread_pool)
 
 if(BUILD_TESTS)
   add_executable(tests
